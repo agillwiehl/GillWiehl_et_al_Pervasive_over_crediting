@@ -1,0 +1,43 @@
+---
+title: "Gill-Wiehl et al. Figure S1"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+```{r}
+df_by_project_v2 <- read_excel("df_by_project_pub.xlsx")
+df_project_overcrediting_v2 <- read_excel("df_project_overcrediting.xlsx")
+#df_by_project_v2$protocol_id<-df_by_project_v2$`Row Labels`
+df_regress=na.omit(df_by_project_v2)
+df_regress <- left_join(df_project_overcrediting_v2,df_by_project_v2)
+df_regress <- df_regress[,c('protocol_id','0','total_verified_credits','log_total_verified_credits')]
+df_regress <- unique(df_regress)
+df_regress <- df_regress[df_regress$total_verified_credits>0,]
+df_regress$log_total_verified_credits <- as.numeric(df_regress$log_total_verified_credits)
+df_regress$project_mean_overcrediting=df_regress$'0'
+model=lm(df_regress$project_mean_overcrediting~df_regress$log_total_verified_credits, data=df_regress)
+summary(model)
+```
+
+```{r}
+library(ggplot2)
+coeff<-coefficients(model)          
+intercept<-coeff[1]
+slope<- coeff[2]
+ggp <- ggplot(df_regress, aes(log_total_verified_credits, project_mean_overcrediting,color=log_total_verified_credits)) +         
+  geom_point()+theme_classic()+geom_abline(intercept = intercept, slope = slope, color="red", 
+               linetype="dashed", size=1.5)+xlab('Log (Total verified credits)')+ylab('Mean amount of over-crediting (from Monte Carlo Method)')+geom_text(x=14, y=130, label="Linear-log fit: y ~ 70 - 3.2x")+geom_text(x=14, y=100, label="p - values: 0.2")+geom_text(x=14, y=70, label="Adjusted R-squared:0.01")
+ggp
+```
+
+
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file). 
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+

@@ -1,0 +1,49 @@
+---
+title: "Code to create Figure 1"
+output: html_notebook
+---
+
+```{r}
+library(networkD3)
+library(readxl)
+library(dplyr)
+links <- read_excel("11-21-22_sankey_for_R.xlsx")
+nodes <- read_excel("11-21-22_sankey_for_R.xlsx", 
+    sheet = "names")
+links <- as.data.frame(links)
+nodes <- as.data.frame(nodes)
+
+my_color <- 'd3.scaleOrdinal() .domain(["c","m", "u"]) .range(["cyan", "darkblue", "darkgrey"])'
+
+sn <- sankeyNetwork(Links = links, Nodes = nodes, 
+          Source = "source", Target = "target", Value = "value", 
+          NodeID = "Names", iterations=0, colourScale=my_color, LinkGroup="p_group",NodeGroup="group", units = "cases", fontSize = 12, nodeWidth = 12, margin = list(left = 330, right=130))
+
+sn$x$nodes <-
+  sn$x$nodes %>% 
+  mutate(is_source_node = name %in% links$From)
+  
+
+#sn$x$nodes$source <- nodes$source
+
+sn<- htmlwidgets::onRender(
+  sn,
+  '
+  function(el,x) {
+  d3.select(el)
+    .selectAll(".node text")
+    .filter(function(d) { return d.is_source_node; })
+    .attr("x", x.options.nodeWidth-16)
+    .attr("text-anchor", "end");
+
+  d3.select(el)
+    .selectAll(".node text")
+    .filter(function(d) { return !d.is_source_node; })
+    .attr("x", x.options.nodeWidth+6)
+    .attr("text-anchor", "start");
+  }
+  '
+)
+sn
+
+```
